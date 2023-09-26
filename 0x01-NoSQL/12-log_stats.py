@@ -1,30 +1,41 @@
 #!/usr/bin/env python3
-'''pymongo module
-'''
+"""Write a Python script that provides some stats about Nginx
+logs stored in MongoDB:
+
+Database: logs
+Collection: nginx
+Display (same as the example):
+first line: x logs where x is the number of documents in this collection
+second line: Methods:
+5 lines with the number of documents with the method =
+["GET", "POST", "PUT", "PATCH", "DELETE"] in this order
+(see example below - warning: it’s a tabulation before each line)
+one line with the number of documents with:
+method=GET
+path=/status
+You can use this dump as data sample: dump.zip
+"""
+
+
+import pymongo
 from pymongo import MongoClient
 
 
-def nginx_logs(nginx_collections):
-    '''Print Nginx HTTP methods logs
-    '''
-    print('{} logs'.format(nginx_collections.count_documents({})))
-    print('Methods:')
-    http_methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
-    for method in http_methods:
-        total_count = len(list(nginx_collections.find({'method': method})))
-        print('\tmethod {}: {}'.format(method, total_count))
-    status_count = len(list(nginx_collections.find(
-        {'method': 'GET', 'path': '/status'}
-    )))
-    print('{} status check'.format(status_count))
+def log_nginx_stats(mongo_collection):
+    """provides some stats about Nginx logs"""
+    print(f"{mongo_collection.estimated_document_count()} logs")
+
+    print("Methods:")
+    for method in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
+        count = mongo_collection.count_documents({"method": method})
+        print(f"\tmethod {method}: {count}")
+
+    number_of_gets = mongo_collection.count_documents(
+        {"method": "GET", "path": "/status"})
+    print(f"{number_of_gets} status check")
 
 
-def start_db():
-    '''connects to db client and run above function
-    '''
-    client = MongoClient('mongodb://127.0.0.1:27017')
-    nginx_logs(client.logs.nginx)
-
-
-if __name__ == '__main__':
-    start_db()
+if __name__ == "__main__":
+    mongo_collection = MongoClient('mongodb://127.0.0.1:27017').logs.nginx
+    log_nginx_stats(mongo_collection)
+    
